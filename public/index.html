@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Qui est le plus ?</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Qui est le plus ?</h1>
+  <div class="screen">
+    <h1>Qui est le plus ?</h1>
 
-  <input id="name" placeholder="Ton pseudo">
-  <input id="questions" type="number" value="10" min="10" max="50">
+    <input id="name" placeholder="Ton pseudo">
+    <input id="questions" type="number" value="10" min="10" max="50">
 
-  <button onclick="create()">Créer une partie</button>
+    <button onclick="create()">Créer une partie</button>
 
-  <input id="code" placeholder="Code">
-  <button onclick="join()">Rejoindre</button>
+    <input id="code" placeholder="Code du salon">
+    <button onclick="join()">Rejoindre</button>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="client.js"></script>

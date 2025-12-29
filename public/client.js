@@ -20,15 +20,19 @@ function join() {
 socket.on("lobbyJoined", code => {
   lobbyCode = code;
   document.body.innerHTML = `
-    <h2>Lobby ${code}</h2>
-    <div id="players"></div>
-    <button onclick="start()">Démarrer</button>
+    <div class="screen">
+      <h2>Salon ${code}</h2>
+      <div id="players"></div>
+      <button onclick="start()">Démarrer la partie</button>
+    </div>
   `;
 });
 
 socket.on("playersUpdate", players => {
   document.getElementById("players").innerHTML =
-    Object.values(players).join("<br>");
+    Object.values(players)
+      .map(name => `<div class="player-card">${name}</div>`)
+      .join("");
 });
 
 function start() {
@@ -36,13 +40,23 @@ function start() {
 }
 
 socket.on("newQuestion", () => {
-  document.body.innerHTML = "<h2>Vote pour le plus...</h2>";
+  document.body.innerHTML = `
+    <div class="screen">
+      <h2>Vote pour le plus</h2>
+      <p>(question à venir)</p>
+    </div>
+  `;
 });
 
 socket.on("scoresUpdate", scores => {
-  document.body.innerHTML =
-    "<h2>Scores</h2>" +
-    Object.values(scores).join("<br>");
+  document.body.innerHTML = `
+    <div class="screen">
+      <h2>Scores</h2>
+      ${Object.entries(scores)
+        .map(([id, score]) => `<div class="player-card">${score} pts</div>`)
+        .join("")}
+    </div>
+  `;
 });
 
 socket.on("gameOver", scores => {
