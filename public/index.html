@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Qui est le plus ?</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Qui est le plus ?</h1>
+
+  <input id="name" placeholder="Ton pseudo">
+  <input id="questions" type="number" value="10" min="10" max="50">
+
+  <button onclick="create()">Créer une partie</button>
+
+  <input id="code" placeholder="Code">
+  <button onclick="join()">Rejoindre</button>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>
