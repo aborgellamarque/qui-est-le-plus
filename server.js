@@ -120,7 +120,7 @@ io.on("connection", socket => {
     lobby.votesCount++;
 
     const totalPlayers = Object.keys(lobby.players).length;
-    const expectedVotes = totalPlayers - 1;
+    const expectedVotes = totalPlayers;
 
     if (lobby.votesCount >= expectedVotes) {
       endQuestion(code);
