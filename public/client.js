@@ -1,4 +1,5 @@
 let playersList = {};
+let isHost = false;
 let hasVoted = false;
 
 const socket = io({
@@ -20,19 +21,28 @@ function join() {
   });
 }
 
-socket.on("lobbyJoined", code => {
-  lobbyCode = code;
+socket.on("lobbyJoined", data => {
+  lobbyCode = data.code;
+  isHost = data.isHost;
+
   document.body.innerHTML = `
     <div class="screen">
-      <h2>Salon ${code}</h2>
+      <h2>Salon ${lobbyCode}</h2>
       <div id="players"></div>
-      <button onclick="start()">Démarrer la partie</button>
+      ${isHost ? `<button onclick="start()">Démarrer la partie</button>` : `<p>En attente du créateur...</p>`}
     </div>
   `;
 });
 
 socket.on("playersUpdate", players => {
   playersList = players;
+
+  const container = document.getElementById("players");
+  if (!container) return;
+
+  container.innerHTML = Object.values(players)
+    .map(name => `<div class="player-card">${name}</div>`)
+    .join("");
 });
 
 function start() {
@@ -52,12 +62,11 @@ socket.on("newQuestion", question => {
   const list = document.getElementById("voteList");
 
   Object.entries(playersList).forEach(([id, name]) => {
-    if (id === socket.id) return; // empêche auto-vote
+    if (id === socket.id) return;
 
     const div = document.createElement("div");
     div.className = "player-card";
     div.innerText = name;
-
     div.onclick = () => vote(id);
 
     list.appendChild(div);

@@ -33,6 +33,7 @@ io.on("connection", socket => {
   socket.on("createLobby", ({ name, questionsCount }) => {
     const code = generateCode();
     lobbies[code] = {
+      hostId: socket.id,
       players: {},
       scores: {},
       questionsCount,
@@ -40,11 +41,15 @@ io.on("connection", socket => {
       votes: {}
     };
 
+
     lobbies[code].players[socket.id] = name;
     lobbies[code].scores[socket.id] = 0;
 
     socket.join(code);
-    socket.emit("lobbyJoined", code);
+    socket.emit("lobbyJoined", {
+      code,
+      isHost: true
+    });
     io.to(code).emit("playersUpdate", lobbies[code].players);
   });
 
@@ -55,15 +60,23 @@ io.on("connection", socket => {
     lobbies[code].scores[socket.id] = 0;
 
     socket.join(code);
-    socket.emit("lobbyJoined", code);
+    socket.emit("lobbyJoined", {
+      code,
+      isHost: false
+    });
+
     io.to(code).emit("playersUpdate", lobbies[code].players);
   });
 
   socket.on("startGame", code => {
     const lobby = lobbies[code];
+    if (!lobby) return;
+    if (socket.id !== lobby.hostId) return;
+
     lobby.currentQuestion = 0;
     io.to(code).emit("newQuestion", QUESTIONS[lobby.currentQuestion]);
   });
+
 
 
   socket.on("vote", ({ code, target }) => {
