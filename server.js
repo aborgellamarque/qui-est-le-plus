@@ -29,23 +29,31 @@ function generateCode() {
 }
 
 function endQuestion(code) {
+  clearTimeout(lobby.questionTimer);
   const lobby = lobbies[code];
   if (!lobby) return;
 
-  const sorted = Object.entries(lobby.votes)
-    .sort((a, b) => b[1] - a[1]);
+  const maxVotes = Math.max(...Object.values(lobby.votes));
 
-  const mostVoted = sorted[0]?.[0];
+  const winners = Object.entries(lobby.votes)
+    .filter(([_, v]) => v === maxVotes)
+    .map(([id]) => id);
 
-  // Attribution des points
+  // +1 point à tous les joueurs "les plus" (ex æquo compris)
+  winners.forEach(id => {
+    lobby.scores[id] = (lobby.scores[id] || 0) + 1;
+  });
+
+  // +1 point aux joueurs qui ont voté pour un des ex æquo
   Object.entries(lobby.votesByPlayer).forEach(([playerId, votedFor]) => {
-    if (votedFor === mostVoted) {
+    if (winners.includes(votedFor)) {
       lobby.scores[playerId] = (lobby.scores[playerId] || 0) + 1;
     }
   });
 
+
   io.to(code).emit("questionResults", {
-    mostVoted,
+    winners,
     votes: lobby.votes,
     scores: lobby.scores
   });
@@ -61,12 +69,28 @@ function endQuestion(code) {
     if (lobby.currentQuestion >= lobby.questionsCount) {
       io.to(code).emit("gameOver", lobby.scores);
     } else {
-      io.to(code).emit(
-        "newQuestion",
-        QUESTIONS[lobby.currentQuestion]
-      );
+      startQuestion(code);
     }
   }, 7000); // 7 secondes résultats
+}
+
+function startQuestion(code) {
+  const lobby = lobbies[code];
+  if (!lobby) return;
+
+  // Envoi de la question
+  io.to(code).emit(
+    "newQuestion",
+    QUESTIONS[lobby.currentQuestion]
+  );
+
+  // Sécurité : on annule l'ancien timer
+  clearTimeout(lobby.questionTimer);
+
+  // Timer serveur (15s)
+  lobby.questionTimer = setTimeout(() => {
+    endQuestion(code);
+  }, 15000);
 }
 
 io.on("connection", socket => {
@@ -78,6 +102,7 @@ io.on("connection", socket => {
       players: {},
       scores: {},
       questionsCount,
+      questionTimer: null,
       currentQuestion: 0,
       votes: {},
       votesByPlayer: {},
@@ -118,8 +143,9 @@ io.on("connection", socket => {
     if (socket.id !== lobby.hostId) return;
 
     lobby.currentQuestion = 0;
-    io.to(code).emit("newQuestion", QUESTIONS[lobby.currentQuestion]);
+    startQuestion(code);
   });
+
 
 
 

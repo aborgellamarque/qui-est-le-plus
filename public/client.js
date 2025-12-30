@@ -108,7 +108,12 @@ socket.on("questionResults", data => {
   document.body.innerHTML = `
     <div class="screen">
       <h2>Résultat</h2>
-      <p><strong>${playersList[data.mostVoted]}</strong> est le plus 👑</p>
+      <p>
+        👑 Le(s) plus :
+        <strong>
+          ${data.winners.map(id => playersList[id]).join(", ")}
+        </strong>
+      </p>
       ${ranking}
       <div class="time-container">
         <div id="time-bar"></div>
