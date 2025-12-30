@@ -1,3 +1,6 @@
+let playersList = {};
+let hasVoted = false;
+
 const socket = io({
   transports: ["polling"]
 });
@@ -29,23 +32,36 @@ socket.on("lobbyJoined", code => {
 });
 
 socket.on("playersUpdate", players => {
-  document.getElementById("players").innerHTML =
-    Object.values(players)
-      .map(name => `<div class="player-card">${name}</div>`)
-      .join("");
+  playersList = players;
 });
 
 function start() {
   socket.emit("startGame", lobbyCode);
 }
 
-socket.on("newQuestion", () => {
+socket.on("newQuestion", question => {
+  hasVoted = false;
+
   document.body.innerHTML = `
     <div class="screen">
-      <h2>Vote pour le plus</h2>
-      <p>(question à venir)</p>
+      <h2>${question}</h2>
+      <div id="voteList"></div>
     </div>
   `;
+
+  const list = document.getElementById("voteList");
+
+  Object.entries(playersList).forEach(([id, name]) => {
+    if (id === socket.id) return; // empêche auto-vote
+
+    const div = document.createElement("div");
+    div.className = "player-card";
+    div.innerText = name;
+
+    div.onclick = () => vote(id);
+
+    list.appendChild(div);
+  });
 });
 
 socket.on("scoresUpdate", scores => {
@@ -64,3 +80,17 @@ socket.on("gameOver", scores => {
     "<h1>Fin de partie</h1>" +
     Object.values(scores).join("<br>");
 });
+
+function vote(targetId) {
+  if (hasVoted) return;
+
+  hasVoted = true;
+  socket.emit("vote", { code: lobbyCode, target: targetId });
+
+  document.body.innerHTML = `
+    <div class="screen">
+      <h2>Vote enregistré ✅</h2>
+      <p>En attente des autres joueurs...</p>
+    </div>
+  `;
+}

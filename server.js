@@ -11,6 +11,18 @@ const io = new Server(server, {
 app.use(express.static("public"));
 
 const lobbies = {};
+const QUESTIONS = [
+  "Qui est le plus drôle ?",
+  "Qui est le plus en retard ?",
+  "Qui est le plus susceptible ?",
+  "Qui est le plus fêtard ?",
+  "Qui est le plus intelligent ?",
+  "Qui est le plus sportif ?",
+  "Qui est le plus maladroit ?",
+  "Qui est le plus chanceux ?",
+  "Qui est le plus romantique ?",
+  "Qui est le plus audacieux ?"
+];
 
 function generateCode() {
   return Math.random().toString(36).substring(2, 7).toUpperCase();
@@ -48,8 +60,11 @@ io.on("connection", socket => {
   });
 
   socket.on("startGame", code => {
-    io.to(code).emit("newQuestion");
+    const lobby = lobbies[code];
+    lobby.currentQuestion = 0;
+    io.to(code).emit("newQuestion", QUESTIONS[lobby.currentQuestion]);
   });
+
 
   socket.on("vote", ({ code, target }) => {
     const lobby = lobbies[code];
@@ -74,7 +89,10 @@ io.on("connection", socket => {
     if (lobby.currentQuestion >= lobby.questionsCount) {
       io.to(code).emit("gameOver", lobby.scores);
     } else {
-      io.to(code).emit("newQuestion");
+      io.to(code).emit(
+        "newQuestion",
+        QUESTIONS[lobby.currentQuestion]
+      );
     }
   });
 

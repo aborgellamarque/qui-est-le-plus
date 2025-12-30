@@ -56,3 +56,8 @@ button:active {
   text-align: center;
   font-size: 18px;
 }
+
+.player-card:hover {
+  background: #3b3b5c;
+}
+
