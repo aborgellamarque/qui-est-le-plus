@@ -37,11 +37,16 @@ function endQuestion(code) {
 
   clearTimeout(lobby.questionTimer);
 
-  const maxVotes = Math.max(...Object.values(lobby.votes));
+  const voteValues = Object.values(lobby.votes);
+  const maxVotes = voteValues.length ? Math.max(...voteValues) : 0;
 
-  const winners = Object.entries(lobby.votes)
-    .filter(([_, v]) => v === maxVotes)
-    .map(([id]) => id);
+  const winners =
+    maxVotes === 0
+      ? []
+      : Object.entries(lobby.votes)
+          .filter(([_, v]) => v === maxVotes)
+          .map(([id]) => id);
+
 
   // +1 point à tous les joueurs "les plus" (ex æquo compris)
   winners.forEach(id => {
@@ -159,7 +164,7 @@ io.on("connection", socket => {
   socket.on("vote", ({ code, target }) => {
     const lobby = lobbies[code];
     if (!lobby) return;
-
+    if (lobby.questionEnded) return;
     if (lobby.votesByPlayer[socket.id]) return;
 
     lobby.votesByPlayer[socket.id] = target;
@@ -177,7 +182,19 @@ io.on("connection", socket => {
 
   socket.on("disconnect", () => {
     for (const code in lobbies) {
-      delete lobbies[code].players[socket.id];
+      const lobby = lobbies[code];
+      if (!lobby) continue;
+
+      delete lobby.players[socket.id];
+      delete lobby.votesByPlayer[socket.id];
+
+      if (!lobby.questionEnded) {
+        const totalPlayers = Object.keys(lobby.players).length;
+        if (lobby.votesCount >= totalPlayers) {
+          endQuestion(code);
+        }
+      }
+
     }
   });
 });
