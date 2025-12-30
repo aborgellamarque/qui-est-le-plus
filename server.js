@@ -29,9 +29,13 @@ function generateCode() {
 }
 
 function endQuestion(code) {
-  clearTimeout(lobby.questionTimer);
   const lobby = lobbies[code];
   if (!lobby) return;
+
+  if (lobby.questionEnded) return;
+  lobby.questionEnded = true;
+
+  clearTimeout(lobby.questionTimer);
 
   const maxVotes = Math.max(...Object.values(lobby.votes));
 
@@ -78,6 +82,8 @@ function startQuestion(code) {
   const lobby = lobbies[code];
   if (!lobby) return;
 
+  lobby.questionEnded = false;
+
   // Envoi de la question
   io.to(code).emit(
     "newQuestion",
@@ -104,6 +110,7 @@ io.on("connection", socket => {
       questionsCount,
       questionTimer: null,
       currentQuestion: 0,
+      questionEnded: false,
       votes: {},
       votesByPlayer: {},
       votesCount: 0
