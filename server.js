@@ -28,6 +28,33 @@ function generateCode() {
   return Math.random().toString(36).substring(2, 7).toUpperCase();
 }
 
+function endQuestion(code) {
+  const lobby = lobbies[code];
+  if (!lobby) return;
+
+  const sorted = Object.entries(lobby.votes)
+    .sort((a, b) => b[1] - a[1]);
+
+  if (sorted[0]) lobby.scores[sorted[0][0]] += 3;
+  if (sorted[1]) lobby.scores[sorted[1][0]] += 2;
+  if (sorted[2]) lobby.scores[sorted[2][0]] += 1;
+
+  lobby.votes = {};
+  lobby.votesCount = 0;
+  lobby.currentQuestion++;
+
+  io.to(code).emit("scoresUpdate", lobby.scores);
+
+  if (lobby.currentQuestion >= lobby.questionsCount) {
+    io.to(code).emit("gameOver", lobby.scores);
+  } else {
+    io.to(code).emit(
+      "newQuestion",
+      QUESTIONS[lobby.currentQuestion]
+    );
+  }
+}
+
 io.on("connection", socket => {
 
   socket.on("createLobby", ({ name, questionsCount }) => {
@@ -38,7 +65,9 @@ io.on("connection", socket => {
       scores: {},
       questionsCount,
       currentQuestion: 0,
-      votes: {}
+      votes: {},
+      votesCount: 0
+
     };
 
 
@@ -81,31 +110,20 @@ io.on("connection", socket => {
 
   socket.on("vote", ({ code, target }) => {
     const lobby = lobbies[code];
-    if (!lobby.votes[target]) lobby.votes[target] = 0;
+    if (!lobby) return;
+
+    if (!lobby.votes[target]) {
+      lobby.votes[target] = 0;
+    }
+
     lobby.votes[target]++;
-  });
+    lobby.votesCount++;
 
-  socket.on("endQuestion", code => {
-    const lobby = lobbies[code];
-    const sorted = Object.entries(lobby.votes)
-      .sort((a, b) => b[1] - a[1]);
+    const totalPlayers = Object.keys(lobby.players).length;
+    const expectedVotes = totalPlayers - 1;
 
-    if (sorted[0]) lobby.scores[sorted[0][0]] += 3;
-    if (sorted[1]) lobby.scores[sorted[1][0]] += 2;
-    if (sorted[2]) lobby.scores[sorted[2][0]] += 1;
-
-    lobby.votes = {};
-    lobby.currentQuestion++;
-
-    io.to(code).emit("scoresUpdate", lobby.scores);
-
-    if (lobby.currentQuestion >= lobby.questionsCount) {
-      io.to(code).emit("gameOver", lobby.scores);
-    } else {
-      io.to(code).emit(
-        "newQuestion",
-        QUESTIONS[lobby.currentQuestion]
-      );
+    if (lobby.votesCount >= expectedVotes) {
+      endQuestion(code);
     }
   });
 
