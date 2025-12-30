@@ -29,7 +29,11 @@ socket.on("lobbyJoined", data => {
     <div class="screen">
       <h2>Salon ${lobbyCode}</h2>
       <div id="players"></div>
-      ${isHost ? `<button onclick="start()">Démarrer la partie</button>` : `<p>En attente du créateur...</p>`}
+      ${
+        isHost
+          ? `<button onclick="start()">Démarrer la partie</button>`
+          : `<p style="text-align:center;">En attente du créateur…</p>`
+      }
     </div>
   `;
 });
@@ -37,10 +41,10 @@ socket.on("lobbyJoined", data => {
 socket.on("playersUpdate", players => {
   playersList = players;
 
-  const container = document.getElementById("players");
-  if (!container) return;
+  const playersDiv = document.getElementById("players");
+  if (!playersDiv) return;
 
-  container.innerHTML = Object.values(players)
+  playersDiv.innerHTML = Object.values(players)
     .map(name => `<div class="player-card">${name}</div>`)
     .join("");
 });
