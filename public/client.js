@@ -1,3 +1,4 @@
+let timerInterval;
 let playersList = {};
 let isHost = false;
 let hasVoted = false;
@@ -60,6 +61,9 @@ socket.on("newQuestion", question => {
     <div class="screen">
       <h2>${question}</h2>
       <div id="voteList"></div>
+      <div class="time-container">
+        <div id="time-bar"></div>
+      </div>
     </div>
   `;
 
@@ -75,6 +79,8 @@ socket.on("newQuestion", question => {
 
     list.appendChild(div);
   });
+
+  startTimer(15);
 });
 
 socket.on("scoresUpdate", scores => {
@@ -88,10 +94,46 @@ socket.on("scoresUpdate", scores => {
   `;
 });
 
+socket.on("questionResults", data => {
+  clearInterval(timerInterval);
+
+  const ranking = Object.entries(data.votes)
+    .sort((a, b) => b[1] - a[1])
+    .map(([id, votes]) => {
+      return `<div class="player-card">
+        ${playersList[id]} — ${votes} votes
+      </div>`;
+    }).join("");
+
+  document.body.innerHTML = `
+    <div class="screen">
+      <h2>Résultat</h2>
+      <p><strong>${playersList[data.mostVoted]}</strong> est le plus 👑</p>
+      ${ranking}
+      <div class="time-container">
+        <div id="time-bar"></div>
+      </div>
+    </div>
+  `;
+
+  startTimer(7);
+});
+
 socket.on("gameOver", scores => {
-  document.body.innerHTML =
-    "<h1>Fin de partie</h1>" +
-    Object.values(scores).join("<br>");
+  const podium = Object.entries(scores)
+    .sort((a, b) => b[1] - a[1])
+    .map(([id, score], i) => `
+      <div class="player-card podium-${i}">
+        ${i + 1}. ${playersList[id]} — ${score} pts
+      </div>
+    `).join("");
+
+  document.body.innerHTML = `
+    <div class="screen">
+      <h2>🏆 Podium</h2>
+      ${podium}
+    </div>
+  `;
 });
 
 function vote(targetId) {
@@ -106,4 +148,20 @@ function vote(targetId) {
       <p>En attente des autres joueurs...</p>
     </div>
   `;
+}
+
+function startTimer(seconds) {
+  clearInterval(timerInterval);
+
+  let timeLeft = seconds;
+  const bar = document.getElementById("time-bar");
+
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    bar.style.width = (timeLeft / seconds) * 100 + "%";
+
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+    }
+  }, 1000);
 }

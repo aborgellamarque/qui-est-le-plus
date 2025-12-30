@@ -35,24 +35,38 @@ function endQuestion(code) {
   const sorted = Object.entries(lobby.votes)
     .sort((a, b) => b[1] - a[1]);
 
-  if (sorted[0]) lobby.scores[sorted[0][0]] += 3;
-  if (sorted[1]) lobby.scores[sorted[1][0]] += 2;
-  if (sorted[2]) lobby.scores[sorted[2][0]] += 1;
+  const mostVoted = sorted[0]?.[0];
 
+  // Attribution des points
+  Object.entries(lobby.votesByPlayer).forEach(([playerId, votedFor]) => {
+    if (votedFor === mostVoted) {
+      lobby.scores[playerId] = (lobby.scores[playerId] || 0) + 1;
+    }
+  });
+
+  io.to(code).emit("questionResults", {
+    mostVoted,
+    votes: lobby.votes,
+    scores: lobby.scores
+  });
+
+  // Reset
   lobby.votes = {};
+  lobby.votesByPlayer = {};
   lobby.votesCount = 0;
-  lobby.currentQuestion++;
 
-  io.to(code).emit("scoresUpdate", lobby.scores);
+  setTimeout(() => {
+    lobby.currentQuestion++;
 
-  if (lobby.currentQuestion >= lobby.questionsCount) {
-    io.to(code).emit("gameOver", lobby.scores);
-  } else {
-    io.to(code).emit(
-      "newQuestion",
-      QUESTIONS[lobby.currentQuestion]
-    );
-  }
+    if (lobby.currentQuestion >= lobby.questionsCount) {
+      io.to(code).emit("gameOver", lobby.scores);
+    } else {
+      io.to(code).emit(
+        "newQuestion",
+        QUESTIONS[lobby.currentQuestion]
+      );
+    }
+  }, 7000); // 7 secondes résultats
 }
 
 io.on("connection", socket => {
@@ -66,6 +80,7 @@ io.on("connection", socket => {
       questionsCount,
       currentQuestion: 0,
       votes: {},
+      votesByPlayer: {},
       votesCount: 0
 
     };
@@ -112,20 +127,20 @@ io.on("connection", socket => {
     const lobby = lobbies[code];
     if (!lobby) return;
 
-    if (!lobby.votes[target]) {
-      lobby.votes[target] = 0;
-    }
+    if (lobby.votesByPlayer[socket.id]) return;
 
-    lobby.votes[target]++;
+    lobby.votesByPlayer[socket.id] = target;
+
+    lobby.votes[target] = (lobby.votes[target] || 0) + 1;
     lobby.votesCount++;
 
     const totalPlayers = Object.keys(lobby.players).length;
-    const expectedVotes = totalPlayers;
 
-    if (lobby.votesCount >= expectedVotes) {
+    if (lobby.votesCount >= totalPlayers) {
       endQuestion(code);
     }
   });
+
 
   socket.on("disconnect", () => {
     for (const code in lobbies) {
