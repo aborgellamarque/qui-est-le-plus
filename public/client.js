@@ -43,6 +43,7 @@ socket.on("lobbyJoined", data => {
       socket.emit("startGame", lobbyCode);
     };
   }
+  socket.emit("requestPlayers", lobbyCode);
 });
 
 

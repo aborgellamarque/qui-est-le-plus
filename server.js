@@ -141,6 +141,11 @@ io.on("connection", socket => {
     io.to(code).emit("playersUpdate", lobbies[code].players);
   });
 
+  socket.on("requestPlayers", code => {
+    const lobby = lobbies[code];
+    if (!lobby) return;
+    socket.emit("playersUpdate", lobby.players);
+  });
 
   socket.on("joinLobby", ({ code, name }) => {
     const lobby = lobbies[code];
