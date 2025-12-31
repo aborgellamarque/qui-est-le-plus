@@ -60,23 +60,45 @@ socket.on("newQuestion", data => {
     return;
   }
 
-  questionEl.textContent = data.question;
-  choicesEl.innerHTML = "";
+  hasVoted = false; // 🔁 reset vote à chaque question
+
+  document.body.innerHTML = `
+    <div class="screen">
+      <h2 id="question">${data.question}</h2>
+
+      <div id="choices"></div>
+
+      <div class="time-container">
+        <div id="time-bar"></div>
+      </div>
+    </div>
+  `;
+
+  const questionEl = document.getElementById("question");
+  const choicesEl = document.getElementById("choices");
 
   data.players.forEach(player => {
-    if (player.id === socket.id) return;
+    if (player.id === socket.id) return; // 🚫 pas d'auto-vote
 
     const btn = document.createElement("button");
     btn.textContent = player.name;
+
     btn.onclick = () => {
+      if (hasVoted) return;
+      hasVoted = true;
+
       socket.emit("vote", {
         code: lobbyCode,
         target: player.id
       });
+
+      choicesEl.innerHTML = `<p style="text-align:center;">Vote enregistré ✅</p>`;
     };
 
     choicesEl.appendChild(btn);
   });
+
+  startTimer(15); // ⏱️ timer question
 });
 
 socket.on("scoresUpdate", scores => {
@@ -137,25 +159,13 @@ socket.on("gameOver", scores => {
   `;
 });
 
-function vote(targetId) {
-  if (hasVoted) return;
-
-  hasVoted = true;
-  socket.emit("vote", { code: lobbyCode, target: targetId });
-
-  document.body.innerHTML = `
-    <div class="screen">
-      <h2>Vote enregistré ✅</h2>
-      <p>En attente des autres joueurs...</p>
-    </div>
-  `;
-}
-
 function startTimer(seconds) {
   clearInterval(timerInterval);
-
   let timeLeft = seconds;
   const bar = document.getElementById("time-bar");
+  if (!bar) return;
+
+  bar.style.width = "100%";
 
   timerInterval = setInterval(() => {
     timeLeft--;
@@ -166,3 +176,4 @@ function startTimer(seconds) {
     }
   }, 1000);
 }
+
