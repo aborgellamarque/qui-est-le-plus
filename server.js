@@ -31,9 +31,7 @@ function startQuestion(code) {
   const lobby = lobbies[code];
   if (!lobby) return;
 
-  // Sécurité absolue
-  if (!lobby.questionsOrder || !lobby.questionsOrder[lobby.currentQuestion]) {
-    console.error("Question inexistante, fin du jeu");
+  if (!lobby.questionsOrder || lobby.currentQuestion >= lobby.questionsOrder.length) {
     io.to(code).emit("gameOver", lobby.scores);
     return;
   }
@@ -55,6 +53,7 @@ function startQuestion(code) {
     endQuestion(code, "timer");
   }, 15000);
 }
+
 
 function endQuestion(code, source = "votes") {
   const lobby = lobbies[code];

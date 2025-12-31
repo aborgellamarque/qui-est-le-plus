@@ -32,12 +32,19 @@ socket.on("lobbyJoined", data => {
       <div id="players"></div>
       ${
         isHost
-          ? `<button onclick="start()">Démarrer la partie</button>`
+          ? `<button id="startBtn">Démarrer la partie</button>`
           : `<p style="text-align:center;">En attente du créateur…</p>`
       }
     </div>
   `;
+
+  if (isHost) {
+    document.getElementById("startBtn").onclick = () => {
+      socket.emit("startGame", lobbyCode);
+    };
+  }
 });
+
 
 socket.on("playersUpdate", players => {
   playersList = players;
