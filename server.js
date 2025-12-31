@@ -116,28 +116,31 @@ io.on("connection", socket => {
   socket.on("createLobby", ({ name, questionsCount }) => {
     const code = generateCode();
 
-    const questionsCopy = [...QUESTIONS];
-    shuffleArray(questionsCopy);
-
     lobbies[code] = {
-      hostId: socket.id,
-      players: {},
-      scores: {},
-      questionsCount,
-      questionTimer: null,
+      host: socket.id,
+      players: {
+        [socket.id]: name    // ✅ LE CRÉATEUR EST AJOUTÉ ICI
+      },
+      scores: {
+        [socket.id]: 0
+      },
       currentQuestion: 0,
-      questionEnded: false,
+      questionsCount,
+      questionsOrder: [],
       votes: {},
-      votesByPlayer: {},
-      votesCount: 0,
-      questionsOrder: questionsCopy.slice(0, questionsCount)
+      questionEnded: false
     };
 
-
     socket.join(code);
-    socket.emit("lobbyJoined", { code, isHost: true });
+
+    socket.emit("lobbyJoined", {
+      code,
+      isHost: true
+    });
+
     io.to(code).emit("playersUpdate", lobbies[code].players);
   });
+
 
   socket.on("joinLobby", ({ code, name }) => {
     const lobby = lobbies[code];
