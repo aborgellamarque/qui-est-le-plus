@@ -31,26 +31,24 @@ function startQuestion(code) {
   const lobby = lobbies[code];
   if (!lobby) return;
 
-  if (!lobby.questionsOrder || lobby.currentQuestion >= lobby.questionsOrder.length) {
-    io.to(code).emit("gameOver", lobby.scores);
-    return;
-  }
-
   lobby.questionEnded = false;
-  clearTimeout(lobby.questionTimer);
+  lobby.votes = {};
+  lobby.votesByPlayer = {};
+  lobby.votesCount = 0;
 
-  const playersList = Object.entries(lobby.players).map(([id, name]) => ({
+  const playersArray = Object.entries(lobby.players).map(([id, name]) => ({
     id,
     name
   }));
 
   io.to(code).emit("newQuestion", {
-    question: lobby.questionsOrder[lobby.currentQuestion],
-    players: playersList
+    question: QUESTIONS[lobby.currentQuestion],
+    players: playersArray
   });
 
+  clearTimeout(lobby.questionTimer);
   lobby.questionTimer = setTimeout(() => {
-    endQuestion(code, "timer");
+    endQuestion(code);
   }, 15000);
 }
 

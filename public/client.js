@@ -60,12 +60,11 @@ function start() {
 }
 
 socket.on("newQuestion", data => {
+  hasVoted = false; // 🔁 reset vote à chaque question
   if (!data || !data.question || !data.players) {
     console.error("Question invalide reçue", data);
     return;
   }
-
-  hasVoted = false; // 🔁 reset vote à chaque question
 
   document.body.innerHTML = `
     <div class="screen">
