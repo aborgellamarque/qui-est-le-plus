@@ -33,7 +33,15 @@ function startQuestion(code) {
 
   lobby.questionEnded = false;
 
-  io.to(code).emit("newQuestion", lobby.questionsOrder[lobby.currentQuestion]);
+  const playersList = Object.entries(lobby.players).map(([id, name]) => ({
+    id,
+    name
+  }));
+
+  io.to(code).emit("newQuestion", {
+    question: lobby.questionsOrder[lobby.currentQuestion],
+    players: playersList
+  });
 
   clearTimeout(lobby.questionTimer);
   lobby.questionTimer = setTimeout(() => {
@@ -143,6 +151,7 @@ io.on("connection", socket => {
     const lobby = lobbies[code];
     if (!lobby || lobby.questionEnded) return;
     if (lobby.votesByPlayer[socket.id]) return;
+    if (target === socket.id) return; // 🚫 sécurité absolue
 
     lobby.votesByPlayer[socket.id] = target;
     lobby.votes[target] = (lobby.votes[target] || 0) + 1;

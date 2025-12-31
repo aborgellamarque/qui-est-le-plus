@@ -54,33 +54,24 @@ function start() {
   socket.emit("startGame", lobbyCode);
 }
 
-socket.on("newQuestion", question => {
-  hasVoted = false;
+socket.on("newQuestion", ({ question, players }) => {
+  questionEl.textContent = question;
+  choicesEl.innerHTML = "";
 
-  document.body.innerHTML = `
-    <div class="screen">
-      <h2>${question}</h2>
-      <div id="voteList"></div>
-      <div class="time-container">
-        <div id="time-bar"></div>
-      </div>
-    </div>
-  `;
+  players.forEach(player => {
+    if (player.id === socket.id) return; // 🚫 interdit de voter pour soi
 
-  const list = document.getElementById("voteList");
+    const btn = document.createElement("button");
+    btn.textContent = player.name;
+    btn.onclick = () => {
+      socket.emit("vote", {
+        code: lobbyCode,
+        target: player.id
+      });
+    };
 
-  Object.entries(playersList).forEach(([id, name]) => {
-    if (id === socket.id) return;
-
-    const div = document.createElement("div");
-    div.className = "player-card";
-    div.innerText = name;
-    div.onclick = () => vote(id);
-
-    list.appendChild(div);
+    choicesEl.appendChild(btn);
   });
-
-  startTimer(15);
 });
 
 socket.on("scoresUpdate", scores => {
