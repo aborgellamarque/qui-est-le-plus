@@ -54,12 +54,17 @@ function start() {
   socket.emit("startGame", lobbyCode);
 }
 
-socket.on("newQuestion", ({ question, players }) => {
-  questionEl.textContent = question;
+socket.on("newQuestion", data => {
+  if (!data || !data.question || !data.players) {
+    console.error("Question invalide reçue", data);
+    return;
+  }
+
+  questionEl.textContent = data.question;
   choicesEl.innerHTML = "";
 
-  players.forEach(player => {
-    if (player.id === socket.id) return; // 🚫 interdit de voter pour soi
+  data.players.forEach(player => {
+    if (player.id === socket.id) return;
 
     const btn = document.createElement("button");
     btn.textContent = player.name;

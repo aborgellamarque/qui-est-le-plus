@@ -31,7 +31,15 @@ function startQuestion(code) {
   const lobby = lobbies[code];
   if (!lobby) return;
 
+  // Sécurité absolue
+  if (!lobby.questionsOrder || !lobby.questionsOrder[lobby.currentQuestion]) {
+    console.error("Question inexistante, fin du jeu");
+    io.to(code).emit("gameOver", lobby.scores);
+    return;
+  }
+
   lobby.questionEnded = false;
+  clearTimeout(lobby.questionTimer);
 
   const playersList = Object.entries(lobby.players).map(([id, name]) => ({
     id,
@@ -43,7 +51,6 @@ function startQuestion(code) {
     players: playersList
   });
 
-  clearTimeout(lobby.questionTimer);
   lobby.questionTimer = setTimeout(() => {
     endQuestion(code, "timer");
   }, 15000);
@@ -110,21 +117,23 @@ io.on("connection", socket => {
   socket.on("createLobby", ({ name, questionsCount }) => {
     const code = generateCode();
 
-    const questionsCopy = shuffleArray([...QUESTIONS]);
-    const selectedQuestions = questionsCopy.slice(0, questionsCount);
+    const questionsCopy = [...QUESTIONS];
+    shuffleArray(questionsCopy);
 
     lobbies[code] = {
       hostId: socket.id,
-      players: { [socket.id]: name },
-      scores: { [socket.id]: 0 },
-      questionsOrder: selectedQuestions,
-      currentQuestion: 0,
+      players: {},
+      scores: {},
+      questionsCount,
       questionTimer: null,
+      currentQuestion: 0,
       questionEnded: false,
       votes: {},
       votesByPlayer: {},
-      votesCount: 0
+      votesCount: 0,
+      questionsOrder: questionsCopy.slice(0, questionsCount)
     };
+
 
     socket.join(code);
     socket.emit("lobbyJoined", { code, isHost: true });
