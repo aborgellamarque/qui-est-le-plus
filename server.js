@@ -45,15 +45,19 @@ function startQuestion(code) {
 
   clearTimeout(lobby.questionTimer);
   lobby.questionTimer = setTimeout(() => {
-    endQuestion(code);
+    endQuestion(code, "timer");
   }, 15000);
 }
 
-function endQuestion(code) {
+function endQuestion(code, source = "votes") {
   const lobby = lobbies[code];
-  if (!lobby || lobby.questionEnded) return;
+  if (lobby.questionEnded) {
+    return;
+  }
 
   lobby.questionEnded = true;
+  clearTimeout(lobby.questionTimer);
+
   clearTimeout(lobby.questionTimer);
 
   const voteValues = Object.values(lobby.votes);
@@ -159,7 +163,7 @@ io.on("connection", socket => {
 
     const totalPlayers = Object.keys(lobby.players).length;
     if (lobby.votesCount >= totalPlayers) {
-      endQuestion(code);
+      endQuestion(code, "votes");
     }
   });
 
